@@ -1,0 +1,17 @@
+# Ignore node_modules (re-installed inside image)
+node_modules
+
+# Ignore build output (only copy dist/.next from builder stage)
+dist
+.next
+
+# Ignore local configs
+.env
+.env.local
+*.log
+
+# Ignore git and editor files
+.git
+.gitignore
+.DS_Store
+.vscode
