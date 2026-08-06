@@ -1,12 +1,12 @@
 # Derq Traffic Dashboard
 
-this is a full-stack app that shows trafic data as interactive charts — by
+this is a full-stack app that shows traffic data as interactive charts — by
 country and by vehicle type — backed by a Postgres database, with the
 ability to edit record vehicle count using a modal that open from each row in the table
 
 ## Deployed version (Vercel): https://client-cyan-five.vercel.app/
 
-To give you a live preview of the app, I ported the same API logic from the NestJS backend into Next.js route handlers (`route.ts`) and deployed that to vercel, since vercel can not easily host the full NestJS + Postgres + Docker stack.The main submission and real architecture is the NestJS backend in this repo, the Vercel version is just a clickable demo of the same logic.
+To give you a live preview of the app, I ported the same API logic from the NestJS backend into Next.js route handlers (`route.ts`) and deployed that to Vercel, since vercel can not easily host the full NestJS + Postgres + Docker stack.The main submission and real architecture is the NestJS backend in this repo, the Vercel version is just a clickable demo of the same logic.
 
 ## Tech Stack Used in the app
 
@@ -50,16 +50,16 @@ Runs on `http://localhost:3000` and talks to the API running at port 4001 or wha
 Both `backend/Dockerfile` and `client/Dockerfile` are basically multi stage build
 ready for production to build and run each image, or point them at the
 `k8s/` manifests if deploying to a cluster (they include some deployments files like
-services, ingress routes, secrets (which i just pushed to git to show it in task only but in real production this comes from Valuts or Local files), and cert config for both apps).
+services, ingress routes, secrets (which i just pushed to git to show it in task only but in real production this comes from Vaults or Local files), and cert config for both apps).
 
 ## Architecture
 
 Request flow: **frontend (react query fetches) -> service which calles backend -> NestJS
 controller → service → repository → Postgres**.
 
-- The repository is basically behind an `ITrafficRepository` interface (`traffic-repository.interface.ts`), with `TrafficTypeOrmRepository` as i always do this because this is good for testing as i can have in memory database that implmeent the interface or maybe new data source come in the future to support same functions.
-- chart endpoints is at this endpoint path (`/traffic/by-country`, `/traffic/by-vehicle-type`) i do their grouping in the database with `GROUP BY` + `SUM`, not in app code becuase this can cheaper on database and can scale instead of me doing requests and merging on API.
-- Validation is done with a the standard package `class-validator` DTOs and a global `ValidationPipe` (whitelist + do not allow unknow fields in the payload), and errors go through a global `HttpExceptionFilter` which i do always to have response normlization and also another reason for good UX to show errors messages under fields in forms identified by their field name.
+- The repository is basically behind an `ITrafficRepository` interface (`traffic-repository.interface.ts`), with `TrafficTypeOrmRepository` as i always do this because this is good for testing as i can have in memory database that implement the interface or maybe new data source come in the future to support same functions.
+- chart endpoints is at this endpoint path (`/traffic/by-country`, `/traffic/by-vehicle-type`) i do their grouping in the database with `GROUP BY` + `SUM`, not in app code because this can cheaper on database and can scale instead of me doing requests and merging on API.
+- Validation is done with a the standard package `class-validator` DTOs and a global `ValidationPipe` (whitelist + do not allow unknow fields in the payload), and errors go through a global `HttpExceptionFilter` which i do always to have response normalization and also another reason for good UX to show errors messages under fields in forms identified by their field name.
 
 - in the frontend, each API call has its own thin service function (`services/`) and a matching React hook (`hooks/`) — components never call `axios` directly.
 
@@ -84,12 +84,12 @@ yarn test
 ## Scalability (5 → 50 → 500 RPS)
 
 - **~5 RPS:** what's here today is enough — single API instance, single Postgres instance, indexes on `country`, `vehicleType`, and `(timestamp, id)` and i did the composite index for one reason for sorting this data
-- **~50 RPS:** is this case i will first put a cache Redis instance in front of the two aggregation endpoints since they do not need to be real-time to the second also i can use redis for another reason in case the reading dashboard need real time events or data to be sent to the dashboard from muultiple pods running the backend in this case i will use websocket but with redis adapter, and i will also do a proper connection pooling, and run a couple of replicas or statles APIS of the backend instances behind the load balancer.
-- **~500 RPS:** in this case i will make autoscaling and almost all could providers support this so i can autoscale on demande the API horizontally, add i will also add Postgres read replicas and forward all the read chart endpoints to them so that if we get high write traffic i will have write instance sperate from read replicas and also i will do use a queue like for example SQS or RabbitMQ or also Redis streams so that i will forward all writes to it and then a worker will spin up and take the writes at slower and write them back at slower rates so db stay stable and i do currently same for trading at my company acually and i used before also ECS Fargate, so writes spike do not block dashboards.
+- **~50 RPS:** is this case i will first put a cache Redis instance in front of the two aggregation endpoints since they do not need to be real-time to the second also i can use redis for another reason in case the reading dashboard need real time events or data to be sent to the dashboard from muultiple pods running the backend in this case i will use websocket but with redis adapter, and i will also do a proper connection pooling, and run a couple of replicas or stateless APIS of the backend instances behind the load balancer.
+- **~500 RPS:** in this case i will make autoscaling and almost all could providers support this so i can autoscale on demand the API horizontally, add i will also add Postgres read replicas and forward all the read chart endpoints to them so that if we get high write traffic i will have write instance separate from read replicas and also i will do use a queue like for example SQS or RabbitMQ or also Redis streams so that i will forward all writes to it and then a worker will spin up and take the writes at slower and write them back at slower rates so db stay stable and i do currently same for trading at my company actually and i used before also ECS Fargate, so writes spike do not block dashboards.
 
 ## Notes / Tradeoffs
 
-- i added `DB_SYNC` (TypeORM `synchronize`) and this is fine for local dev and also because but should always be `false` in production, real deployments should use migrations for controlled, reversible schema updates. i did not add authentication because it is not mentioned in th taks but i can do Auth or OAuth SSOs, but it's the first thing I'd add before this touches real traffic data. i also did add some fake delay in server to have good UX to show real latency of frontend calling a backend and show proper UX for the app.
+- i added `DB_SYNC` (TypeORM `synchronize`) and this is fine for local dev and also because but should always be `false` in production, real deployments should use migrations for controlled, reversible schema updates. i did not add authentication because it is not mentioned in th task but i can do Auth or OAuth SSOs, but it's the first thing I'd add before this touches real traffic data. i also did add some fake delay in server to have good UX to show real latency of frontend calling a backend and show proper UX for the app.
 
 ## CI/CD
 
