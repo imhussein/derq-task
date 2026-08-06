@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
+import { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { Env } from './config/env';
 import { setupApp } from './setup-app';
@@ -15,7 +16,7 @@ async function bootstrap() {
 
   if (process.env.NODE_ENV === 'development') {
     // i did Just only for the UX in dev mod
-    app.use((req, res, next) => {
+    app.use((req: Request, res: Response, next: NextFunction) => {
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve(true);
