@@ -4,6 +4,10 @@ this is a full-stack app that shows trafic data as interactive charts — by
 country and by vehicle type — backed by a Postgres database, with the
 ability to edit record vehicle count using a modal that open from each row in the table
 
+## Deployed version (Vercel): https://client-cyan-five.vercel.app/
+
+To give you a live preview of the app, I ported the same API logic from the NestJS backend into Next.js route handlers (`route.ts`) and deployed that to vercel, since vercel can not easily host the full NestJS + Postgres + Docker stack.The main submission and real architecture is the NestJS backend in this repo, the Vercel version is just a clickable demo of the same logic.
+
 ## Tech Stack Used in the app
 
 - **Backend:** NestJS + TypeORM + Postgres — structured, has unit testing and integration testing using testcontainers package, and has Swagger docs too enabled.
