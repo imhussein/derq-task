@@ -135,10 +135,10 @@ describe('TrafficTypeOrmRepository (integration)', () => {
     const result = await repository.findAll();
 
     expect(result.map((record) => record.id)).toEqual([
-      SAUDI_CAR_ID, // LATEST
-      UAE_CAR_ID, // MIDDLE, tie broken by id ASC
-      UAE_TRUCK_ID, // MIDDLE, tie broken by id ASC
-      EGYPT_BUS_ID, // EARLIEST
+      SAUDI_CAR_ID,
+      UAE_CAR_ID,
+      UAE_TRUCK_ID,
+      EGYPT_BUS_ID,
     ]);
   });
 
@@ -158,5 +158,23 @@ describe('TrafficTypeOrmRepository (integration)', () => {
     await expect(
       repository.updateOne('00000000-0000-0000-0000-000000000000', 1),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('findByCountry() returns empty array when no records matchs the filter', async () => {
+    const result = await repository.findByCountry({
+      vehicleType: 'Motorcycle',
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it('updateOne() does not change the other trafic records', async () => {
+    await repository.updateOne(UAE_CAR_ID, 999);
+
+    const otherRecord = await dataSource
+      .getRepository(Traffic)
+      .findOneBy({ id: UAE_TRUCK_ID });
+
+    expect(otherRecord?.count).toBe(50);
   });
 });
